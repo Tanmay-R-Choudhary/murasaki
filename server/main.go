@@ -1,51 +1,72 @@
 package main
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	"golang.org/x/net/netutil"
 )
 
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Unsupported HTTP Method", http.StatusMethodNotAllowed)
+func handle(conn net.Conn) {
+	defer conn.Close()
+
+	buf := make([]byte, 1024) // Max body size restricted to 1KB for now
+	n, err := conn.Read(buf)
+	if err != nil {
+		log.Fatal("Error occured while reading body of request: ", err)
+		return
 	}
 
-	if _, err := w.Write([]byte("PONG")); err != nil {
-		http.Error(w, "Something unexpected occured", http.StatusInternalServerError)
-		log.Fatal("pongHandler:", err)
+	if string(buf[:n]) == "PING" {
+		conn.Write([]byte("PONG"))
+		return
+	} else {
+		conn.Write([]byte("Unrecognized"))
 	}
 }
 
 func main() {
-	server := &http.Server{Addr: ":6379"}
+	serverState := NewServerState()
 
-	// Add Handlers
-	http.HandleFunc("/ping", pingHandler)
-	// ------------
-
-	go func() {
-		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal("Exception from server:", err)
-		}
-	}()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
-
-	_, close := context.WithTimeout(context.Background(), 30*time.Second)
-	defer close()
-
-	if err := server.Shutdown(context.Background()); err != nil {
-		log.Fatal("Error occured while gracefully shutting down:", err)
+	listener, err := net.Listen("tcp", "localhost:8080")
+	if err != nil {
+		log.Fatal("Error occured while making listener for tcp server: ", err)
 		return
 	}
 
-	log.Println("Gracefull shutdown complete")
+	limitedListener := netutil.LimitListener(listener, 1)
+
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigchan
+		limitedListener.Close()
+		// Add graceful shutdown handling here
+		serverState.setShutdown(true)
+	}()
+
+	for {
+		// Check if sever is shutting down
+		if serverState.getShutdown() {
+			break
+		}
+
+		conn, err := limitedListener.Accept()
+		if err != nil {
+			if !errors.Is(err, net.ErrClosed) {
+				log.Fatal("Error occured while accepting connection: ", err)
+			}
+			continue
+		}
+
+		go handle(conn)
+	}
+
+	fmt.Println("Graceful shutdown complete")
 }
