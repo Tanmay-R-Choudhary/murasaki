@@ -5,13 +5,11 @@ import (
 	"log"
 	"math/rand"
 	"net"
-
-	"golang.org/x/sync/errgroup"
 )
 
 var payloads []string = []string{"PING", "SOMETHING ELSE"}
 
-func makeConnectionAndSendPing() error {
+func makeStandaloneConnectionAndSendPing() error {
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
 		return err
@@ -29,14 +27,26 @@ func makeConnectionAndSendPing() error {
 	return nil
 }
 
-func main() {
-	errorGroup := new(errgroup.Group)
+func makeManyRequestsWithOneConnection() {
+	conn, err := net.Dial("tcp", "localhost:8080")
+	if err != nil {
+		log.Fatal("Error occured while opening tcp connection: ", err)
+	}
+	defer conn.Close()
 
 	for range 10 {
-		errorGroup.Go(makeConnectionAndSendPing)
-	}
+		conn.Write([]byte("PING"))
 
-	if err := errorGroup.Wait(); err != nil {
-		log.Fatal("Client goroutines erd'd:", err)
+		buf := make([]byte, 1024) // Max body size restricted to 1KB for now
+		if _, err := conn.Read(buf); err != nil {
+			log.Fatal("Error occured while reading response from server: ", err)
+			break
+		}
+
+		fmt.Println(string(buf))
 	}
+}
+
+func main() {
+	makeManyRequestsWithOneConnection()
 }

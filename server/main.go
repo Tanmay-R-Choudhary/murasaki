@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -12,21 +13,33 @@ import (
 	"golang.org/x/net/netutil"
 )
 
+func writeResp(data string, conn net.Conn) {
+	if _, err := conn.Write([]byte(data)); err != nil {
+		log.Fatal("Error occured while writing response: ", err)
+	}
+}
+
 func handle(conn net.Conn) {
 	defer conn.Close()
 
-	buf := make([]byte, 1024) // Max body size restricted to 1KB for now
-	n, err := conn.Read(buf)
-	if err != nil {
-		log.Fatal("Error occured while reading body of request: ", err)
-		return
-	}
+	for {
+		buf := make([]byte, 1024) // Max body size restricted to 1KB for now
+		n, err := conn.Read(buf)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Print("Closed connection")
+				break
+			} else {
+				log.Fatal("Error occured while reading body of request: ", err)
+				return
+			}
+		}
 
-	if string(buf[:n]) == "PING" {
-		conn.Write([]byte("PONG"))
-		return
-	} else {
-		conn.Write([]byte("Unrecognized"))
+		if string(buf[:n]) == "PING" {
+			writeResp("PONG", conn)
+		} else {
+			writeResp("Unrecognized", conn)
+		}
 	}
 }
 
