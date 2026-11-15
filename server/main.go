@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 
-	limitedListener := netutil.LimitListener(listener, 1)
+	limitedListener := netutil.LimitListener(listener, 50)
 
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
