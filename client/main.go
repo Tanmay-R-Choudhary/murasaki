@@ -1,52 +1,76 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
-	"math/rand"
 	"net"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 )
 
-var payloads []string = []string{"PING", "SOMETHING ELSE"}
-
-func makeStandaloneConnectionAndSendPing() error {
-	conn, err := net.Dial("tcp", "localhost:8080")
-	if err != nil {
+func sendCommand(cmd string, conn net.Conn) error {
+	if _, err := conn.Write([]byte(cmd)); err != nil {
+		log.Fatal("Error occured while writing: ", err)
 		return err
 	}
-	defer conn.Close()
-
-	conn.Write([]byte(payloads[rand.Intn(len(payloads))]))
 
 	buf := make([]byte, 1024) // Max body size restricted to 1KB for now
 	if _, err := conn.Read(buf); err != nil {
-		return err
+		if errors.Is(err, io.EOF) {
+			return nil
+		} else {
+			return err
+		}
 	}
 
 	fmt.Println(string(buf))
 	return nil
 }
 
-func makeManyRequestsWithOneConnection() {
+func main() {
+	if len(os.Args) < 1 {
+		log.Fatal("Expected input command")
+		return
+	}
+
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
-		log.Fatal("Error occured while opening tcp connection: ", err)
+		log.Fatal("Error occured while opening connection to server: ", err)
+		return
 	}
 	defer conn.Close()
 
-	for range 10 {
-		conn.Write([]byte("PING"))
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+	shutdownTriggered := false
 
-		buf := make([]byte, 1024) // Max body size restricted to 1KB for now
-		if _, err := conn.Read(buf); err != nil {
-			log.Fatal("Error occured while reading response from server: ", err)
-			break
+	go func() {
+		var rawCommand string
+		for {
+			if shutdownTriggered {
+				break
+			}
+
+			_, err := fmt.Scan(&rawCommand)
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					sigchan <- syscall.SIGTERM
+				} else {
+					log.Fatal("Error occured while reading input: ", err)
+					break
+				}
+			}
+			for v := range strings.SplitSeq(rawCommand, "\\n") {
+				sendCommand(strings.ToUpper(v), conn)
+			}
 		}
+	}()
 
-		fmt.Println(string(buf))
-	}
-}
-
-func main() {
-	makeManyRequestsWithOneConnection()
+	<-sigchan // Waiting for interrupt signal from os
+	shutdownTriggered = true
+	log.Print("Client shutdown triggered")
 }

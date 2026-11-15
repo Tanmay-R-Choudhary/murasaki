@@ -36,7 +36,7 @@ func handle(conn net.Conn) {
 		}
 
 		if string(buf[:n]) == "PING" {
-			writeResp("PONG", conn)
+			writeResp("+PONG\r\n", conn)
 		} else {
 			writeResp("Unrecognized", conn)
 		}
