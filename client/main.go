@@ -14,7 +14,7 @@ import (
 
 func sendCommand(cmd string, conn net.Conn) error {
 	if _, err := conn.Write([]byte(cmd)); err != nil {
-		log.Fatal("Error occured while writing: ", err)
+		log.Println("Error occured while writing: ", err)
 		return err
 	}
 
@@ -27,7 +27,7 @@ func sendCommand(cmd string, conn net.Conn) error {
 		}
 	}
 
-	fmt.Println(string(buf))
+	log.Println(string(buf))
 	return nil
 }
 
@@ -60,7 +60,7 @@ func main() {
 				if errors.Is(err, io.EOF) {
 					sigchan <- syscall.SIGTERM
 				} else {
-					log.Fatal("Error occured while reading input: ", err)
+					log.Println("Error occured while reading input: ", err)
 					break
 				}
 			}
