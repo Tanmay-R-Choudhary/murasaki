@@ -14,7 +14,7 @@ import (
 
 func sendCommand(cmd string, conn net.Conn) error {
 	if _, err := conn.Write([]byte(cmd)); err != nil {
-		log.Fatal("Error occured while writing: ", err)
+		log.Println("Error occured while writing: ", err)
 		return err
 	}
 
@@ -34,34 +34,29 @@ func sendCommand(cmd string, conn net.Conn) error {
 func main() {
 	if len(os.Args) < 1 {
 		log.Fatal("Expected input command")
-		return
 	}
 
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
-		log.Fatal("Error occured while opening connection to server: ", err)
+		log.Println("Error occured while opening connection to server: ", err)
 		return
 	}
 	defer conn.Close()
 
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-	shutdownTriggered := false
 
 	go func() {
 		var rawCommand string
 		for {
-			if shutdownTriggered {
-				break
-			}
-
 			_, err := fmt.Scan(&rawCommand)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					sigchan <- syscall.SIGTERM
-				} else {
-					log.Fatal("Error occured while reading input: ", err)
 					break
+				} else {
+					log.Println("Error occured while reading input: ", err)
+					continue
 				}
 			}
 			for v := range strings.SplitSeq(rawCommand, "\\n") {
@@ -71,6 +66,5 @@ func main() {
 	}()
 
 	<-sigchan // Waiting for interrupt signal from os
-	shutdownTriggered = true
 	log.Print("Client shutdown triggered")
 }

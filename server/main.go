@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"golang.org/x/net/netutil"
@@ -15,24 +16,24 @@ import (
 
 func writeResp(data string, conn net.Conn) {
 	if _, err := conn.Write([]byte(data)); err != nil {
-		log.Fatal("Error occured while writing response: ", err)
+		log.Println("Error occured while writing response: ", err)
 	}
 }
 
-func handle(conn net.Conn) {
-	defer conn.Close()
+func handle(conn net.Conn, close func()) {
+	defer func() {
+		close()
+		conn.Close()
+	}()
 
 	for {
 		buf := make([]byte, 1024) // Max body size restricted to 1KB for now
 		n, err := conn.Read(buf)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
-				log.Print("Closed connection")
-				break
-			} else {
-				log.Fatal("Error occured while reading body of request: ", err)
-				return
+			if !(errors.Is(err, io.EOF) || errors.Is(err, os.ErrDeadlineExceeded)) {
+				log.Println("Error occured while reading body of request: ", err)
 			}
+			break
 		}
 
 		if string(buf[:n]) == "PING" {
@@ -44,12 +45,9 @@ func handle(conn net.Conn) {
 }
 
 func main() {
-	serverState := NewServerState()
-
 	listener, err := net.Listen("tcp", "localhost:8080")
 	if err != nil {
 		log.Fatal("Error occured while making listener for tcp server: ", err)
-		return
 	}
 
 	limitedListener := netutil.LimitListener(listener, 50)
@@ -59,27 +57,34 @@ func main() {
 
 	go func() {
 		<-sigchan
-		limitedListener.Close()
 		// Add graceful shutdown handling here
-		serverState.setShutdown(true)
+		limitedListener.Close()
 	}()
 
-	for {
-		// Check if sever is shutting down
-		if serverState.getShutdown() {
-			break
-		}
+	wg := &sync.WaitGroup{}
+	ch := NewConnectionHandler()
 
+	for {
 		conn, err := limitedListener.Accept()
 		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				log.Fatal("Error occured while accepting connection: ", err)
+			if errors.Is(err, net.ErrClosed) {
+				log.Println("Closing server, not accepting anymore connections")
+				break
 			}
+
+			log.Println("Error occured while accepting connection: ", err)
 			continue
 		}
 
-		go handle(conn)
+		ch.AddConn(conn)
+		wg.Go(func() {
+			handle(conn, func() {
+				ch.RemoveConn(conn)
+			})
+		})
 	}
 
+	ch.BreakAllActiveReads()
+	wg.Wait()
 	fmt.Println("Graceful shutdown complete")
 }

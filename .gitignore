@@ -33,5 +33,5 @@ go.work.sum
 # .vscode/
 
 # custom binaries
-client/bin*
-server/bin*
+client/mu
+server/murasaki
