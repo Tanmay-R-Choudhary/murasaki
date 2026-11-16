@@ -17,4 +17,4 @@ This repo is built by following the redis exercise in CodeCrafters. All code and
 - bitmaps-01-bq9.md to bitmaps-09-fr8.md
 - auth-01-jn4.md to auth-08-ws7.md
 
-Link: [Stage Descriptions][https://github.com/codecrafters-io/build-your-own-redis/tree/main/stage_descriptions]
+Link: [Stage Descriptions](https://github.com/codecrafters-io/build-your-own-redis/tree/main/stage_descriptions)
