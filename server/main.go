@@ -11,6 +11,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
 	"golang.org/x/net/netutil"
 )
 
@@ -36,10 +37,15 @@ func handle(conn net.Conn, close func()) {
 			break
 		}
 
-		if string(buf[:n]) == "PING" {
-			writeResp("+PONG\r\n", conn)
+		if mwpResp, _, err := mwp.Deserialize(string(buf[:n])); err != nil {
+			log.Println("Error occured while deserializing client command: ", err)
+			break
 		} else {
-			writeResp("Unrecognized", conn)
+			if mwpResp.Equals(mwp.NewMuArray([]mwp.Data{mwp.NewMuString("PING")})) {
+				writeResp(mwp.NewMuArray([]mwp.Data{mwp.NewMuString("PONG")}).Serialize(), conn)
+			} else {
+				writeResp(mwp.NewMuArray([]mwp.Data{mwp.NewMuString("Unrecognized")}).Serialize(), conn)
+			}
 		}
 	}
 }

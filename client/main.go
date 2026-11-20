@@ -10,25 +10,71 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
 )
 
+func strToMwpRepr(cmd string) mwp.Data {
+	cmdElem := []mwp.Data{}
+
+	// Assuming for now command contains only strings
+	for v := range strings.SplitSeq(cmd, " ") {
+		cmdElem = append(cmdElem, mwp.NewMuString(v))
+	}
+
+	return mwp.NewMuArray(cmdElem)
+}
+
 func sendCommand(cmd string, conn net.Conn) error {
-	if _, err := conn.Write([]byte(cmd)); err != nil {
+	mwpRepr := strToMwpRepr(cmd)
+	transferBytes := mwpRepr.Serialize()
+
+	if _, err := conn.Write([]byte(transferBytes)); err != nil {
 		log.Println("Error occured while writing: ", err)
 		return err
 	}
 
 	buf := make([]byte, 1024) // Max body size restricted to 1KB for now
-	if _, err := conn.Read(buf); err != nil {
+	if n, err := conn.Read(buf); err != nil {
 		if errors.Is(err, io.EOF) {
 			return nil
 		} else {
 			return err
 		}
+	} else {
+		if mwpResp, _, err := mwp.Deserialize(string(buf[:n])); err != nil {
+			return err
+		} else {
+			recursiveDebugPrint(mwpResp)
+		}
 	}
 
-	fmt.Println(string(buf))
 	return nil
+}
+
+func recursiveDebugPrint(s mwp.Data) {
+	switch s.Type() {
+	case mwp.MuStringType:
+		if v, ok := s.(*mwp.MuString); ok {
+			fmt.Println(v.Value())
+		} else {
+			fmt.Println("ERROR")
+		}
+	case mwp.MuIntType:
+		if v, ok := s.(*mwp.MuInt); ok {
+			fmt.Println(v.Value())
+		} else {
+			fmt.Println("ERROR")
+		}
+	case mwp.MuArrayType:
+		if v, ok := s.(*mwp.MuArray); ok {
+			for _, d := range v.Value() {
+				recursiveDebugPrint(d)
+			}
+		} else {
+			fmt.Println("ERROR")
+		}
+	}
 }
 
 func main() {
@@ -59,7 +105,7 @@ func main() {
 					continue
 				}
 			}
-			for v := range strings.SplitSeq(rawCommand, "\\n") {
+			for v := range strings.SplitSeq(rawCommand, "\n") {
 				sendCommand(strings.ToUpper(v), conn)
 			}
 		}
