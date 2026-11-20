@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -17,8 +18,8 @@ import (
 func strToMwpRepr(cmd string) mwp.Data {
 	cmdElem := []mwp.Data{}
 
-	// Assuming for now command contains only strings
-	for v := range strings.SplitSeq(cmd, " ") {
+	// TODO:Assuming for now command contains only strings
+	for v := range strings.FieldsSeq(cmd) {
 		cmdElem = append(cmdElem, mwp.NewMuString(v))
 	}
 
@@ -93,22 +94,23 @@ func main() {
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		var rawCommand string
-		for {
-			_, err := fmt.Scan(&rawCommand)
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					sigchan <- syscall.SIGTERM
-					break
-				} else {
-					log.Println("Error occured while reading input: ", err)
-					continue
-				}
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" {
+				continue
 			}
-			for v := range strings.SplitSeq(rawCommand, "\n") {
-				sendCommand(strings.ToUpper(v), conn)
+
+			for v := range strings.SplitSeq(line, "\n") {
+				sendCommand(v, conn)
 			}
 		}
+
+		if err := scanner.Err(); err != nil {
+			log.Println("Error occured while reading input: ", err)
+		}
+
+		sigchan <- syscall.SIGTERM
 	}()
 
 	<-sigchan // Waiting for interrupt signal from os
