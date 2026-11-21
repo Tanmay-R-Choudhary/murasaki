@@ -13,31 +13,44 @@ import (
 	"syscall"
 
 	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
+	"github.com/Tanmay-R-Choudhary/murasaki/mwp/data"
 	"golang.org/x/net/netutil"
 )
 
-func execute(cmd mwp.Data) mwp.Data {
-	arr, ok := cmd.(*mwp.MuArray)
+func execute(cmd data.Data) data.Data {
+	arr, ok := cmd.(*data.MuArray)
 	if !ok || len(arr.Value()) == 0 {
-		return mwp.NewMuString("ERR invalid command")
+		return data.NewMuString("ERR invalid command")
 	}
 
 	args := arr.Value()
-	name, ok := args[0].(*mwp.MuString)
+	name, ok := args[0].(*data.MuString)
 	if !ok {
-		return mwp.NewMuString("ERR invalid command")
+		return data.NewMuString("ERR invalid command")
 	}
 
 	switch strings.ToUpper(name.Value()) {
 	case "PING":
-		return mwp.NewMuString("PONG")
+		return data.NewMuString("PONG")
 	case "ECHO":
 		if len(args) != 2 {
-			return mwp.NewMuString("ERR wrong number of arguments for 'echo' command")
+			return data.NewMuString("ERR wrong number of arguments for 'echo' command")
 		}
 		return args[1]
+	case "GET":
+		if len(args) != 2 {
+			return data.NewMuString("ERR wrong number of arguments for 'get' command")
+		}
+		return GetStore().Get(args[1])
+	case "SET":
+		if len(args) != 3 {
+			return data.NewMuString("ERR wrong number of arguments for 'set' command")
+		}
+
+		GetStore().Set(args[1], args[2])
+		return data.NewMuSimpleString("OK")
 	default:
-		return mwp.NewMuArray([]mwp.Data{mwp.NewMuString("Unrecognized")})
+		return data.NewMuArray([]data.Data{data.NewMuString("Unrecognized")})
 	}
 }
 

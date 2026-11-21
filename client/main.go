@@ -13,17 +13,18 @@ import (
 	"syscall"
 
 	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
+	"github.com/Tanmay-R-Choudhary/murasaki/mwp/data"
 )
 
-func strToMwpRepr(cmd string) mwp.Data {
-	cmdElem := []mwp.Data{}
+func strToMwpRepr(cmd string) data.Data {
+	cmdElem := []data.Data{}
 
 	// TODO:Assuming for now command contains only strings
 	for v := range strings.FieldsSeq(cmd) {
-		cmdElem = append(cmdElem, mwp.NewMuString(v))
+		cmdElem = append(cmdElem, data.NewMuString(v))
 	}
 
-	return mwp.NewMuArray(cmdElem)
+	return data.NewMuArray(cmdElem)
 }
 
 func sendCommand(cmd string, conn net.Conn) error {
@@ -46,43 +47,14 @@ func sendCommand(cmd string, conn net.Conn) error {
 		if mwpResp, _, err := mwp.Deserialize(string(buf[:n])); err != nil {
 			return err
 		} else {
-			recursiveDebugPrint(mwpResp)
+			fmt.Println(mwpResp)
 		}
 	}
 
 	return nil
 }
 
-func recursiveDebugPrint(s mwp.Data) {
-	switch s.Type() {
-	case mwp.MuStringType:
-		if v, ok := s.(*mwp.MuString); ok {
-			fmt.Println(v.Value())
-		} else {
-			fmt.Println("ERROR")
-		}
-	case mwp.MuIntType:
-		if v, ok := s.(*mwp.MuInt); ok {
-			fmt.Println(v.Value())
-		} else {
-			fmt.Println("ERROR")
-		}
-	case mwp.MuArrayType:
-		if v, ok := s.(*mwp.MuArray); ok {
-			for _, d := range v.Value() {
-				recursiveDebugPrint(d)
-			}
-		} else {
-			fmt.Println("ERROR")
-		}
-	}
-}
-
 func main() {
-	if len(os.Args) < 1 {
-		log.Fatal("Expected input command")
-	}
-
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
 		log.Println("Error occured while opening connection to server: ", err)
