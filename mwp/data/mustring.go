@@ -20,7 +20,7 @@ func (muString MuString) Type() DataType {
 }
 
 func (muString MuString) Equals(data Data) bool {
-	if v, ok := data.(*MuString); !ok {
+	if v, ok := data.(MuString); !ok {
 		return false
 	} else {
 		return muString.data == v.data && muString.size == v.size
@@ -31,19 +31,19 @@ func (muString MuString) Value() string {
 	return muString.data
 }
 
-func NewMuString(data string) *MuString {
+func NewMuString(data string) MuString {
 	size := len(data)
-	return &MuString{size, data}
+	return MuString{size, data}
 }
 
-func NewNullMuString() *MuString {
-	return &MuString{size: -1, data: ""}
+func NewNullMuString() MuString {
+	return MuString{size: -1, data: ""}
 }
 
 func (muString MuString) String() string {
 	if muString.size == -1 {
-		return "NULL"
+		return "MuString: NULL"
 	} else {
-		return muString.data
+		return "MuString: " + muString.data
 	}
 }

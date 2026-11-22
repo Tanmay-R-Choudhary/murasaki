@@ -24,17 +24,17 @@ func (muInt MuInt) Value() int {
 }
 
 func (muInt MuInt) Equals(data Data) bool {
-	if v, ok := data.(*MuInt); !ok {
+	if v, ok := data.(MuInt); !ok {
 		return false
 	} else {
 		return muInt.value == v.value
 	}
 }
 
-func NewMuInt(value int) *MuInt {
-	return &MuInt{value}
+func NewMuInt(value int) MuInt {
+	return MuInt{value}
 }
 
 func (muInt MuInt) String() string {
-	return strconv.Itoa(muInt.value)
+	return "MuInt: " + strconv.Itoa(muInt.value)
 }

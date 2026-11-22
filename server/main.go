@@ -18,13 +18,13 @@ import (
 )
 
 func execute(cmd data.Data) data.Data {
-	arr, ok := cmd.(*data.MuArray)
+	arr, ok := cmd.(data.MuArray)
 	if !ok || len(arr.Value()) == 0 {
 		return data.NewMuString("ERR invalid command")
 	}
 
 	args := arr.Value()
-	name, ok := args[0].(*data.MuString)
+	name, ok := args[0].(data.MuString)
 	if !ok {
 		return data.NewMuString("ERR invalid command")
 	}

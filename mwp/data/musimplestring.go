@@ -19,7 +19,7 @@ func (muSimpleString MuSimpleString) Type() DataType {
 }
 
 func (muSimpleString MuSimpleString) Equals(data Data) bool {
-	if v, ok := data.(*MuSimpleString); !ok {
+	if v, ok := data.(MuSimpleString); !ok {
 		return false
 	} else {
 		return muSimpleString.data == v.data
@@ -30,10 +30,10 @@ func (muSimpleString MuSimpleString) Value() string {
 	return muSimpleString.data
 }
 
-func NewMuSimpleString(data string) *MuSimpleString {
-	return &MuSimpleString{data}
+func NewMuSimpleString(data string) MuSimpleString {
+	return MuSimpleString{data}
 }
 
 func (muSimpleString MuSimpleString) String() string {
-	return muSimpleString.data
+	return "MuSimpleString: " + muSimpleString.data
 }

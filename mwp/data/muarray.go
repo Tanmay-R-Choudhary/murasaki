@@ -34,7 +34,7 @@ func (muArr MuArray) Value() []Data {
 }
 
 func (muArr MuArray) Equals(data Data) bool {
-	if v, ok := data.(*MuArray); !ok {
+	if v, ok := data.(MuArray); !ok {
 		return false
 	} else {
 		if len(v.elem) != len(muArr.elem) {
@@ -51,16 +51,20 @@ func (muArr MuArray) Equals(data Data) bool {
 	}
 }
 
-func NewMuArray(elem []Data) *MuArray {
-	return &MuArray{uint(len(elem)), elem}
+func NewMuArray(elem []Data) MuArray {
+	return MuArray{uint(len(elem)), elem}
 }
 
 func (muArr MuArray) String() string {
 	res := strings.Builder{}
-	for _, v := range muArr.elem {
+	res.WriteString("MuArray[")
+	for i, v := range muArr.elem {
 		res.WriteString(v.String())
-		res.WriteString("\n")
+		if i < len(muArr.elem)-1 {
+			res.WriteString(" ")
+		}
 	}
+	res.WriteString("]")
 
 	return res.String()
 }
