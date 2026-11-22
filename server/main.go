@@ -17,6 +17,8 @@ import (
 	"golang.org/x/net/netutil"
 )
 
+var executorLock sync.Mutex
+
 func execute(cmd data.Data) data.Data {
 	arr, ok := cmd.(data.MuArray)
 	if !ok || len(arr.Value()) == 0 {
@@ -76,11 +78,14 @@ func handle(conn net.Conn, close func()) {
 			break
 		}
 
-		if mwpResp, _, err := mwp.Deserialize(string(buf[:n])); err != nil {
+		if mwpCmd, _, err := mwp.Deserialize(string(buf[:n])); err != nil {
 			log.Println("Error occured while deserializing client command: ", err)
 			break
 		} else {
-			writeResp(execute(mwpResp).Serialize(), conn)
+			executorLock.Lock()
+			resp := execute(mwpCmd)
+			executorLock.Unlock()
+			writeResp(resp.Serialize(), conn)
 		}
 	}
 }
