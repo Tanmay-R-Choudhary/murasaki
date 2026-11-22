@@ -1,5 +1,5 @@
 # Murasaki
-A Redis clone in go. Named after the color purple in Japanese.
+A Redis clone in Go. Named after the color purple in Japanese.
 
 ## Objective
 This repo is built by following the redis exercise in CodeCrafters. All code and tests are written by me. Here are the files I will follow in order:
@@ -16,5 +16,18 @@ This repo is built by following the redis exercise in CodeCrafters. All code and
 - aof-01-uj3.md to aof-10-kn2.md
 - bitmaps-01-bq9.md to bitmaps-09-fr8.md
 - auth-01-jn4.md to auth-08-ws7.md
+
+Current Stage: Base 06
+
+## Personal Goal
+My personal goal is to make something similar to redis, not _completely_ copying it, but taking a lot of inspiration from how it works. I want to first get a simple single node server setup and then start working on implementing cluster support, just like Redis.
+
+### Things implemented:
+- Single threaded executiong
+- Datatype resolution client side
+- A global store
+- Custom wire protocol (Murasaki Wire Protocol - MWP) similar to Redis
+- Support for bulk string, simple string, int, array
+- A client and server tcp connection handler
 
 Link: [Stage Descriptions](https://github.com/codecrafters-io/build-your-own-redis/tree/main/stage_descriptions)
