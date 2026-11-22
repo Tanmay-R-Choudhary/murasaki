@@ -20,7 +20,7 @@ func execute(cmd data.Data) data.Data {
 
 	switch strings.ToUpper(name.Value()) {
 	case "PING":
-		return data.NewMuString("PONG")
+		return data.NewMuSimpleString("PONG")
 	case "ECHO":
 		if len(args) != 2 {
 			return data.NewMuString("ERR wrong number of arguments for 'echo' command")
