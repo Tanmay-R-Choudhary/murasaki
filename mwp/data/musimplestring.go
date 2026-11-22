@@ -11,7 +11,7 @@ type MuSimpleString struct {
 }
 
 func (muSimpleString MuSimpleString) Serialize() string {
-	return fmt.Sprintf("+%s%s", muSimpleString.data, utils.CRLF)
+	return fmt.Sprintf("+%s%s", muSimpleString.data, utils.Crlf)
 }
 
 func (muSimpleString MuSimpleString) Type() DataType {

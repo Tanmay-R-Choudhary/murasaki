@@ -7,27 +7,27 @@ import (
 )
 
 var once sync.Once
-var defaultStore *MuStore
+var defaultStore *muStore
 
-type MuStore struct {
+type muStore struct {
 	store map[data.Data]data.Data
 }
 
-func GetStore() *MuStore {
+func getStore() *muStore {
 	once.Do(func() {
 		if defaultStore == nil {
-			defaultStore = &MuStore{store: make(map[data.Data]data.Data)}
+			defaultStore = &muStore{store: make(map[data.Data]data.Data)}
 		}
 	})
 
 	return defaultStore
 }
 
-func (store *MuStore) Set(key data.Data, value data.Data) {
+func (store *muStore) Set(key data.Data, value data.Data) {
 	store.store[key] = value
 }
 
-func (store *MuStore) Get(key data.Data) data.Data {
+func (store *muStore) Get(key data.Data) data.Data {
 	if value, ok := store.store[key]; !ok {
 		return data.NewNullMuString()
 	} else {

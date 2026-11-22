@@ -11,13 +11,13 @@ import (
 
 func Deserialize(value string) (data.Data, int, error) {
 	switch {
-	case strings.HasPrefix(value, utils.SIMPLE_STRING_PREFIX):
+	case strings.HasPrefix(value, utils.SimpleStringPrefix):
 		return deserializeSimpleString(value)
-	case strings.HasPrefix(value, utils.STRING_PREFIX):
+	case strings.HasPrefix(value, utils.StringPrefix):
 		return deserializeString(value)
-	case strings.HasPrefix(value, utils.INT_PREFIX):
+	case strings.HasPrefix(value, utils.IntPrefix):
 		return deserializeInt(value)
-	case strings.HasPrefix(value, utils.ARRAY_PREFIX):
+	case strings.HasPrefix(value, utils.ArrayPrefix):
 		return deserializeArray(value)
 	default:
 		return nil, 0, errors.New("Unexpected datatype received: " + value)
@@ -25,7 +25,7 @@ func Deserialize(value string) (data.Data, int, error) {
 }
 
 func deserializeSimpleString(value string) (data.Data, int, error) {
-	crlfIdx := strings.Index(value, utils.CRLF)
+	crlfIdx := strings.Index(value, utils.Crlf)
 	if crlfIdx == -1 {
 		return nil, 0, errors.New("Could not find CRLF terminator in stream")
 	}
@@ -33,7 +33,7 @@ func deserializeSimpleString(value string) (data.Data, int, error) {
 }
 
 func deserializeString(value string) (data.Data, int, error) {
-	crlfIdx := strings.Index(value, utils.CRLF)
+	crlfIdx := strings.Index(value, utils.Crlf)
 	if crlfIdx == -1 {
 		return nil, 0, errors.New("Could not find CRLF terminator in stream")
 	}
@@ -50,7 +50,7 @@ func deserializeString(value string) (data.Data, int, error) {
 }
 
 func deserializeInt(value string) (data.Data, int, error) {
-	crlfIdx := strings.Index(value, utils.CRLF)
+	crlfIdx := strings.Index(value, utils.Crlf)
 	if crlfIdx == -1 {
 		return nil, 0, errors.New("Could not find CRLF terminator in stream")
 	}
@@ -63,7 +63,7 @@ func deserializeInt(value string) (data.Data, int, error) {
 }
 
 func deserializeArray(value string) (data.Data, int, error) {
-	crlfIdx := strings.Index(value, utils.CRLF)
+	crlfIdx := strings.Index(value, utils.Crlf)
 	if crlfIdx == -1 {
 		return nil, 0, errors.New("Could not find CRLF terminator in stream")
 	}

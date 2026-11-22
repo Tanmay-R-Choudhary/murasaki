@@ -12,7 +12,7 @@ type MuInt struct {
 }
 
 func (muInt MuInt) Serialize() string {
-	return fmt.Sprintf(":%d%s", muInt.value, utils.CRLF)
+	return fmt.Sprintf(":%d%s", muInt.value, utils.Crlf)
 }
 
 func (muInt MuInt) Type() DataType {

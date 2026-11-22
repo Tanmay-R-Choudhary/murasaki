@@ -13,22 +13,14 @@ import (
 	"syscall"
 
 	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
-	"github.com/Tanmay-R-Choudhary/murasaki/mwp/data"
 )
 
-func strToMwpRepr(cmd string) data.Data {
-	cmdElem := []data.Data{}
-
-	// TODO:Assuming for now command contains only strings
-	for v := range strings.FieldsSeq(cmd) {
-		cmdElem = append(cmdElem, data.NewMuString(v))
+func sendCommand(cmd string, conn net.Conn) error {
+	mwpRepr, err := strToMwpRepr(cmd)
+	if err != nil {
+		return err
 	}
 
-	return data.NewMuArray(cmdElem)
-}
-
-func sendCommand(cmd string, conn net.Conn) error {
-	mwpRepr := strToMwpRepr(cmd)
 	transferBytes := mwpRepr.Serialize()
 
 	if _, err := conn.Write([]byte(transferBytes)); err != nil {
@@ -73,8 +65,9 @@ func main() {
 				continue
 			}
 
-			for v := range strings.SplitSeq(line, "\n") {
-				sendCommand(v, conn)
+			if err := sendCommand(line, conn); err != nil {
+				log.Println("Error occured while sending command: ", err)
+				continue
 			}
 		}
 

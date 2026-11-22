@@ -12,7 +12,7 @@ type MuString struct {
 }
 
 func (muString MuString) Serialize() string {
-	return fmt.Sprintf("$%d%s%s%s", muString.size, utils.CRLF, muString.data, utils.CRLF)
+	return fmt.Sprintf("$%d%s%s%s", muString.size, utils.Crlf, muString.data, utils.Crlf)
 }
 
 func (muString MuString) Type() DataType {

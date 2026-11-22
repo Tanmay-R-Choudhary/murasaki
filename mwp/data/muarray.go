@@ -18,7 +18,7 @@ func (muArr MuArray) Serialize() string {
 		elements.WriteString(e.Serialize())
 	}
 
-	return fmt.Sprintf("*%d%s%s", muArr.size, utils.CRLF, elements.String())
+	return fmt.Sprintf("*%d%s%s", muArr.size, utils.Crlf, elements.String())
 }
 
 func (muArr MuArray) Type() DataType {

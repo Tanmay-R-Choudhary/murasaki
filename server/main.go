@@ -8,53 +8,14 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/Tanmay-R-Choudhary/murasaki/mwp"
-	"github.com/Tanmay-R-Choudhary/murasaki/mwp/data"
 	"golang.org/x/net/netutil"
 )
 
 var executorLock sync.Mutex
-
-func execute(cmd data.Data) data.Data {
-	arr, ok := cmd.(data.MuArray)
-	if !ok || len(arr.Value()) == 0 {
-		return data.NewMuString("ERR invalid command")
-	}
-
-	args := arr.Value()
-	name, ok := args[0].(data.MuString)
-	if !ok {
-		return data.NewMuString("ERR invalid command")
-	}
-
-	switch strings.ToUpper(name.Value()) {
-	case "PING":
-		return data.NewMuString("PONG")
-	case "ECHO":
-		if len(args) != 2 {
-			return data.NewMuString("ERR wrong number of arguments for 'echo' command")
-		}
-		return args[1]
-	case "GET":
-		if len(args) != 2 {
-			return data.NewMuString("ERR wrong number of arguments for 'get' command")
-		}
-		return GetStore().Get(args[1])
-	case "SET":
-		if len(args) != 3 {
-			return data.NewMuString("ERR wrong number of arguments for 'set' command")
-		}
-
-		GetStore().Set(args[1], args[2])
-		return data.NewMuSimpleString("OK")
-	default:
-		return data.NewMuArray([]data.Data{data.NewMuString("Unrecognized")})
-	}
-}
 
 func writeResp(data string, conn net.Conn) {
 	if _, err := conn.Write([]byte(data)); err != nil {
@@ -108,7 +69,7 @@ func main() {
 	}()
 
 	wg := &sync.WaitGroup{}
-	ch := NewConnectionHandler()
+	ch := newConnectionHandler()
 
 	for {
 		conn, err := limitedListener.Accept()
@@ -122,15 +83,15 @@ func main() {
 			continue
 		}
 
-		ch.AddConn(conn)
+		ch.addConn(conn)
 		wg.Go(func() {
 			handle(conn, func() {
-				ch.RemoveConn(conn)
+				ch.removeConn(conn)
 			})
 		})
 	}
 
-	ch.BreakAllActiveReads()
+	ch.breakAllActiveReads()
 	wg.Wait()
 	fmt.Println("Graceful shutdown complete")
 }
