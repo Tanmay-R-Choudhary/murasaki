@@ -1,33 +1,49 @@
 # Murasaki
-A Redis clone in Go. Named after the color purple in Japanese.
 
-## Objective
-This repo is built by following the redis exercise in CodeCrafters. All code and tests are written by me. Here are the files I will follow in order:
-- base-01-jm1.md to base-07-yz1.md
-- lists-01-mh6.md to lists-11-xj7.md
-- transactions-01-si4.md to transactions-11-jf8.md
-- optimistic-locking-01-jb7.md to optimistic-locking-08-hq1.md
-- streams-01-cc3.md to streams-13-xu1.md
-- persistence-rdb-01-zg5.md to persistence-rdb-06-sm4.md
-- pub-sub-01-mx3.md to pub-sub-07-ze9.md
-- sorted-sets-01-ct1.md to sorted-sets-08-sq7.md
-- geospatial-01-zt4.md to geospatial-08-rm9.md
-- replication-01-bw1.md to replication-18-na2.md
-- aof-01-uj3.md to aof-10-kn2.md
-- bitmaps-01-bq9.md to bitmaps-09-fr8.md
-- auth-01-jn4.md to auth-08-ws7.md
+A Redis-inspired in-memory data store in Go. Named after the Japanese word for purple.
 
-Current Stage: Base 06
+Built by following CodeCrafters' ["Build your own Redis"](https://github.com/codecrafters-io/build-your-own-redis/tree/main/stage_descriptions) course. All code is written by me with minimal AI assistance as a way to learn.
 
-## Personal Goal
-My personal goal is to make something similar to redis, not _completely_ copying it, but taking a lot of inspiration from how it works. I want to first get a simple single node server setup and then start working on implementing cluster support, just like Redis.
+**Status:** in progress, on Base stage 6. Single node only.
 
-### Things implemented:
-- Single threaded executiong
-- Datatype resolution client side
-- A global store
-- Custom wire protocol (Murasaki Wire Protocol - MWP) similar to Redis
-- Support for bulk string, simple string, int, array
-- A client and server tcp connection handler
+## Goal
 
-Link: [Stage Descriptions](https://github.com/codecrafters-io/build-your-own-redis/tree/main/stage_descriptions)
+A single-node server first, then cluster support, taking inspiration from how Redis works rather than copying it.
+
+## How it works
+
+```
+client ──MWP over TCP──► goroutine per connection (max 50) ──► deserialize
+                                                                    │
+                                              global mutex ──► execute ──► in-memory map
+```
+
+- **Commands:** `PING`, `ECHO`, `GET`, `SET`
+- **Execution:** each connection is read in its own goroutine, but every command runs under one global mutex. Commands are serialized, as in Redis's single-threaded loop.
+- **Store:** one global `map` of keys to typed values.
+
+### Murasaki Wire Protocol (MWP)
+
+MWP reuses RESP's framing. The only difference is that the client resolves types. RESP clients send everything as bulk strings.
+
+`SET score 42`:
+
+| Protocol | Bytes |
+|---|---|
+| RESP | `*3\r\n$3\r\nSET\r\n$5\r\nscore\r\n$2\r\n42\r\n` |
+| MWP | `*3\r\n$3\r\nSET\r\n$5\r\nscore\r\n:42\r\n` |
+
+There is no error type yet. Errors come back as strings starting with `ERR`.
+
+## Run it
+
+Requires Go (see `go.mod`).
+
+```bash
+go run ./server    # listens on localhost:8080
+go run ./client    # reads commands from stdin, e.g.  SET name "murasaki"
+```
+
+## Roadmap
+
+Follows the CodeCrafters order: finish Base, then lists, transactions, streams, persistence, pub/sub, sorted sets, geospatial, replication, AOF, bitmaps, auth. Cluster support comes after the single-node work; the coordination design is undecided.
